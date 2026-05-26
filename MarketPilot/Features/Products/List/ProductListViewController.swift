@@ -39,7 +39,7 @@ final class ProductListViewController: UIViewController {
         collectionView.backgroundColor = .systemBackground
         collectionView.dataSource = self
         collectionView.delegate = self
-        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "Cell")
+        collectionView.register(ProductCollectionViewCell.self, forCellWithReuseIdentifier:ProductCollectionViewCell.reuseIdentifier)
         
         
         
@@ -76,13 +76,57 @@ extension ProductListViewController: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
-        cell.backgroundColor = .systemBlue
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier,
+            for: indexPath
+        ) as? ProductCollectionViewCell else {
+            return UICollectionViewCell()
+        }
+        
+        cell.configure(title: "Product \(indexPath.item + 1)", price: "$19.99")
+        
         return cell
+        
     }
 }
 
-extension ProductListViewController: UICollectionViewDelegate {
+extension ProductListViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        let horizontalPadding: CGFloat = 16
+        let interItemSpacing: CGFloat = 12
+        let availableWidth = collectionView.bounds.width - (horizontalPadding * 2) - interItemSpacing
+        let itemWidth = availableWidth / 2
+        
+        return CGSize(width: itemWidth, height: 210)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        insetForSectionAt section: Int
+    ) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        return 16
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        minimumInteritemSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        return 12
+    }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedItem = indexPath.item
