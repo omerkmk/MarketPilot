@@ -88,7 +88,6 @@
 		B61D92A42FC077EA00C93FA7 = {
 			isa = PBXGroup;
 			children = (
-				B61D92E42FC07A5800C93FA7 /* New Group */,
 				B61D92AF2FC077EA00C93FA7 /* MarketPilot */,
 				B61D92C62FC077ED00C93FA7 /* MarketPilotTests */,
 				B61D92D02FC077ED00C93FA7 /* MarketPilotUITests */,
@@ -104,13 +103,6 @@
 				B61D92CD2FC077ED00C93FA7 /* MarketPilotUITests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		B61D92E42FC07A5800C93FA7 /* New Group */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = "New Group";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
