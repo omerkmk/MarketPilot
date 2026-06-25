@@ -8,34 +8,51 @@
 import UIKit
 
 final class ProductListViewController: UIViewController {
-    private let products : [Product] = [
-        Product(id: 1, title: "MacBook M4 air ", price: 65000, imageName: nil),
-        Product(id: 2, title: "Iphone 17", price: 120000, imageName: nil),
-        Product(id: 3, title: "Lenovo", price: 100000, imageName: nil),
-        Product(id: 4, title: "Food", price: 1000, imageName: nil),
-        Product(id: 5, title: "AirPods pro", price: 10000, imageName: nil),
-        Product(id: 6, title: "Computer", price: 10000, imageName: nil),
-        
-    ]
- 
+    
+    private let productService: ProductServiceProtocol
+    private var products: [Product] = []
+    
     private let emptyStateLabel = UILabel()
-    private let collectionView : UICollectionView = {
-        let layout  = UICollectionViewFlowLayout()
-        let  collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+    
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         return collectionView
     }()
+    
+    init(productService: ProductServiceProtocol) {
+        self.productService = productService
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
         setupHierarchy()
         setupLayout()
-        
+        loadProducts()
+    }
+    
+    private func loadProducts() {
+        Task {
+            do {
+                let products = try await productService.fetchProducts()
+                self.products = products
+                self.collectionView.reloadData()
+            } catch {
+                print(error)
+            }
+        }
     }
     
     private func setupView() {
         view.backgroundColor = .systemBackground
         title = "Products"
-        // emptyStateLabel
+        
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.text = "Products will appear here"
         emptyStateLabel.textAlignment = .center
@@ -43,61 +60,70 @@ final class ProductListViewController: UIViewController {
         emptyStateLabel.font = .preferredFont(forTextStyle: .body)
         emptyStateLabel.numberOfLines = 0
         emptyStateLabel.isHidden = true
-        // Collection view
+        
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .systemBackground
         collectionView.dataSource = self
         collectionView.delegate = self
-        collectionView.register(ProductCollectionViewCell.self, forCellWithReuseIdentifier:ProductCollectionViewCell.reuseIdentifier)
-        
-        
-        
+        collectionView.register(
+            ProductCollectionViewCell.self,
+            forCellWithReuseIdentifier: ProductCollectionViewCell.reuseIdentifier
+        )
     }
     
     private func setupHierarchy() {
         view.addSubview(emptyStateLabel)
         view.addSubview(collectionView)
-        
-        
     }
     
-    private func setupLayout(){
+    private func setupLayout() {
         NSLayoutConstraint.activate([
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24),
-            // Collection View Constraint
+            
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            
-            
-            
-        ])}
+        ])
+    }
 }
+
+// MARK: - UICollectionViewDataSource
 
 extension ProductListViewController: UICollectionViewDataSource {
     
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
         return products.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         let product = products[indexPath.item]
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier, for:indexPath) as? ProductCollectionViewCell else {
+        
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier,
+            for: indexPath
+        ) as? ProductCollectionViewCell else {
             return UICollectionViewCell()
         }
         
-        cell.configure(with:product)
-        
+        cell.configure(with: product)
         return cell
     }
 }
 
+// MARK: - UICollectionViewDelegateFlowLayout
+
 extension ProductListViewController: UICollectionViewDelegateFlowLayout {
+    
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
