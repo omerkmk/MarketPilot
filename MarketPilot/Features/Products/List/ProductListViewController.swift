@@ -12,12 +12,44 @@ final class ProductListViewController: UIViewController {
     private let productService: ProductServiceProtocol
     private var products: [Product] = []
     
-    private let emptyStateLabel = UILabel()
-    
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .systemBackground
+        collectionView.isHidden = true
         return collectionView
+    }()
+    
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+    
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "No products found."
+        label.textAlignment = .center
+        label.textColor = .secondaryLabel
+        label.font = .preferredFont(forTextStyle: .body)
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
+    }()
+    
+    private let errorLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Something went wrong. Please try again."
+        label.textAlignment = .center
+        label.textColor = .secondaryLabel
+        label.font = .preferredFont(forTextStyle: .body)
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
     }()
     
     init(productService: ProductServiceProtocol) {
@@ -37,32 +69,10 @@ final class ProductListViewController: UIViewController {
         loadProducts()
     }
     
-    private func loadProducts() {
-        Task {
-            do {
-                let products = try await productService.fetchProducts()
-                self.products = products
-                self.collectionView.reloadData()
-            } catch {
-                print(error)
-            }
-        }
-    }
-    
     private func setupView() {
         view.backgroundColor = .systemBackground
         title = "Products"
         
-        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
-        emptyStateLabel.text = "Products will appear here"
-        emptyStateLabel.textAlignment = .center
-        emptyStateLabel.textColor = .secondaryLabel
-        emptyStateLabel.font = .preferredFont(forTextStyle: .body)
-        emptyStateLabel.numberOfLines = 0
-        emptyStateLabel.isHidden = true
-        
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.backgroundColor = .systemBackground
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(
@@ -72,22 +82,86 @@ final class ProductListViewController: UIViewController {
     }
     
     private func setupHierarchy() {
-        view.addSubview(emptyStateLabel)
         view.addSubview(collectionView)
+        view.addSubview(loadingIndicator)
+        view.addSubview(emptyStateLabel)
+        view.addSubview(errorLabel)
     }
     
     private func setupLayout() {
         NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24),
             
-            collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            errorLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            errorLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            errorLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
+            errorLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
         ])
+    }
+    
+    private func loadProducts() {
+        showLoading()
+        
+        Task {
+            do {
+                let fetchedProducts = try await productService.fetchProducts()
+                
+                self.products = fetchedProducts
+                self.collectionView.reloadData()
+                
+                if fetchedProducts.isEmpty {
+                    self.showEmpty()
+                } else {
+                    self.showProducts()
+                }
+            } catch {
+                self.showError()
+                print(error)
+            }
+        }
+    }
+    
+    @MainActor
+    private func showLoading() {
+        collectionView.isHidden = true
+        emptyStateLabel.isHidden = true
+        errorLabel.isHidden = true
+        loadingIndicator.startAnimating()
+    }
+    
+    @MainActor
+    private func showProducts() {
+        loadingIndicator.stopAnimating()
+        emptyStateLabel.isHidden = true
+        errorLabel.isHidden = true
+        collectionView.isHidden = false
+    }
+    
+    @MainActor
+    private func showEmpty() {
+        loadingIndicator.stopAnimating()
+        collectionView.isHidden = true
+        errorLabel.isHidden = true
+        emptyStateLabel.isHidden = false
+    }
+    
+    @MainActor
+    private func showError() {
+        loadingIndicator.stopAnimating()
+        collectionView.isHidden = true
+        emptyStateLabel.isHidden = true
+        errorLabel.isHidden = false
     }
 }
 
@@ -161,8 +235,11 @@ extension ProductListViewController: UICollectionViewDelegateFlowLayout {
         return 12
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = indexPath.item
-        print("Selected item: \(selectedItem)")
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didSelectItemAt indexPath: IndexPath
+    ) {
+        let selectedProduct = products[indexPath.item]
+        print("Selected product: \(selectedProduct.title)")
     }
 }
