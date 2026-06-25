@@ -8,7 +8,16 @@
 import UIKit
 
 final class ProductListViewController: UIViewController {
-    
+    private let products : [Product] = [
+        Product(id: 1, title: "MacBook M4 air ", price: 65000, imageName: nil),
+        Product(id: 2, title: "Iphone 17", price: 120000, imageName: nil),
+        Product(id: 3, title: "Lenovo", price: 100000, imageName: nil),
+        Product(id: 4, title: "Food", price: 1000, imageName: nil),
+        Product(id: 5, title: "AirPods pro", price: 10000, imageName: nil),
+        Product(id: 6, title: "Computer", price: 10000, imageName: nil),
+        
+    ]
+ 
     private let emptyStateLabel = UILabel()
     private let collectionView : UICollectionView = {
         let layout  = UICollectionViewFlowLayout()
@@ -72,21 +81,19 @@ final class ProductListViewController: UIViewController {
 extension ProductListViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 10
+        return products.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier,
-            for: indexPath
-        ) as? ProductCollectionViewCell else {
+        
+        let product = products[indexPath.item]
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier, for:indexPath) as? ProductCollectionViewCell else {
             return UICollectionViewCell()
         }
         
-        cell.configure(title: "Product \(indexPath.item + 1)", price: "$19.99")
+        cell.configure(with:product)
         
         return cell
-        
     }
 }
 

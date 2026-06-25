@@ -21,11 +21,10 @@ final class ProductCollectionViewCell: UICollectionViewCell {
         setupLayout()
     }
     
-    func configure(title: String, price: String) {
-        titleLabel.text = title
-        priceLabel.text = price
+    func configure(with product: Product) {
+        titleLabel.text = product.title
+        priceLabel.text = "$\(product.price)"
     }
-    
     
     
     required init?(coder: NSCoder) {
