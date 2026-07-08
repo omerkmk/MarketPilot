@@ -11,6 +11,8 @@ final class ProductListViewController: UIViewController {
     
     private let productService: ProductServiceProtocol
     private var products: [Product] = []
+    private let imageLoadingService: ImageLoadingServiceProtocol
+
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -52,8 +54,9 @@ final class ProductListViewController: UIViewController {
         return label
     }()
     
-    init(productService: ProductServiceProtocol) {
+    init(productService: ProductServiceProtocol,imageLoadingService: ImageLoadingServiceProtocol) {
         self.productService = productService
+        self.imageLoadingService = imageLoadingService
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -116,7 +119,6 @@ final class ProductListViewController: UIViewController {
         Task {
             do {
                 let fetchedProducts = try await productService.fetchProducts()
-                
                 self.products = fetchedProducts
                 self.collectionView.reloadData()
                 
@@ -189,7 +191,7 @@ extension ProductListViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        cell.configure(with: product)
+        cell.configure(with: product,imageLoadingService: imageLoadingService)
         return cell
     }
 }

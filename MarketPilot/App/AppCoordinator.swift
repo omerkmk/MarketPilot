@@ -18,7 +18,8 @@ final class AppCoordinator {
     
     func start() {
         let productService = ProductService()
-        let productListViewController = ProductListViewController(productService: productService)
+        let imageLoadingService = ImageLoadingService()
+        let productListViewController = ProductListViewController(productService: productService, imageLoadingService: imageLoadingService)
         navigationController.setViewControllers([productListViewController], animated: false)
     }
 }
