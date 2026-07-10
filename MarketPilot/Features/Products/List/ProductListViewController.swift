@@ -10,9 +10,10 @@ import UIKit
 final class ProductListViewController: UIViewController {
     
     private let productService: ProductServiceProtocol
-    private var products: [Product] = []
     private let imageLoadingService: ImageLoadingServiceProtocol
-
+    private var products: [Product] = []
+    
+    var onProductSelected: ((Product) -> Void)?
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -54,7 +55,7 @@ final class ProductListViewController: UIViewController {
         return label
     }()
     
-    init(productService: ProductServiceProtocol,imageLoadingService: ImageLoadingServiceProtocol) {
+    init(productService: ProductServiceProtocol, imageLoadingService: ImageLoadingServiceProtocol) {
         self.productService = productService
         self.imageLoadingService = imageLoadingService
         super.init(nibName: nil, bundle: nil)
@@ -191,7 +192,7 @@ extension ProductListViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
         
-        cell.configure(with: product,imageLoadingService: imageLoadingService)
+        cell.configure(with: product, imageLoadingService: imageLoadingService)
         return cell
     }
 }
@@ -242,6 +243,6 @@ extension ProductListViewController: UICollectionViewDelegateFlowLayout {
         didSelectItemAt indexPath: IndexPath
     ) {
         let selectedProduct = products[indexPath.item]
-        print("Selected product: \(selectedProduct.title)")
+        onProductSelected?(selectedProduct)
     }
 }
