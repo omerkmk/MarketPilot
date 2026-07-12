@@ -6,21 +6,22 @@
 //
 
 
-import UIKit
+
 
 import UIKit
 
 final class AppCoordinator {
     
     private let navigationController: UINavigationController
-    
     private let productService: ProductServiceProtocol
     private let imageLoadingService: ImageLoadingServiceProtocol
+    private let cartManager: CartManagerProtocol
     
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
         self.productService = ProductService()
         self.imageLoadingService = ImageLoadingService()
+        self.cartManager = CartManager()
     }
     
     func start() {
@@ -39,7 +40,9 @@ final class AppCoordinator {
     private func showProductDetail(_ product: Product) {
         let productDetailViewController = ProductDetailViewController(
             product: product,
-            imageLoadingService: imageLoadingService
+            imageLoadingService: imageLoadingService,
+            cartManager: cartManager
+            
         )
         
         navigationController.pushViewController(productDetailViewController, animated: true)

@@ -11,7 +11,7 @@ final class ProductDetailViewController: UIViewController {
     
     private let product: Product
     private let imageLoadingService: ImageLoadingServiceProtocol
-    
+    private let cartManager: CartManagerProtocol
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -90,9 +90,10 @@ final class ProductDetailViewController: UIViewController {
     
     
     
-    init(product: Product, imageLoadingService: ImageLoadingServiceProtocol) {
+    init(product: Product, imageLoadingService: ImageLoadingServiceProtocol ,cartManager: CartManagerProtocol) {
         self.product = product
         self.imageLoadingService = imageLoadingService
+        self.cartManager = cartManager
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -222,7 +223,12 @@ final class ProductDetailViewController: UIViewController {
     }
 
     @objc private func addToCartButtonTapped() {
-        print("Add to cart tapped: \(product.title)")
+        cartManager.add(product: product)
+
+        cartManager.items.forEach { item in
+            print("\(item.product.title) - quantity: \(item.quantity)")
+            print("Total price: $\(cartManager.totalPrice)")
+        }
+        
     }
-    
 }
