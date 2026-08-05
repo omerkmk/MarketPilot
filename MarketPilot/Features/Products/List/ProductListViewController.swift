@@ -14,6 +14,7 @@ final class ProductListViewController: UIViewController {
     private var products: [Product] = []
     
     var onProductSelected: ((Product) -> Void)?
+    var onCartTapped: (() -> Void)?
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -68,11 +69,22 @@ final class ProductListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        setupNavigationBar()
         setupHierarchy()
         setupLayout()
         loadProducts()
     }
     
+    private func setupNavigationBar(){
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "cart"), style: .plain, target: self, action: #selector(cartButtonTapped))
+        
+    }
+    
+    
+    @objc private func cartButtonTapped(){
+        onCartTapped?()
+        
+    }
     private func setupView() {
         view.backgroundColor = .systemBackground
         title = "Products"

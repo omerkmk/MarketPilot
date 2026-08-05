@@ -5,9 +5,6 @@
 //  Created by ömer kumek on 22.05.2026.
 //
 
-
-
-
 import UIKit
 
 final class AppCoordinator {
@@ -34,6 +31,10 @@ final class AppCoordinator {
             self?.showProductDetail(product)
         }
         
+        productListViewController.onCartTapped = { [weak self] in
+            self?.showCart()
+        }
+        
         navigationController.setViewControllers([productListViewController], animated: false)
     }
     
@@ -47,4 +48,13 @@ final class AppCoordinator {
         
         navigationController.pushViewController(productDetailViewController, animated: true)
     }
+    
+    
+    private func showCart() {
+       let cartViewController = CartViewController(cartManager: cartManager)
+        
+        navigationController.pushViewController(cartViewController, animated: true)
+        
+    }
+    
 }
