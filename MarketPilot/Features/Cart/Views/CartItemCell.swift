@@ -11,17 +11,30 @@ final class CartItemCell: UITableViewCell {
     
     static let reuseIdentifier = "CartItemCell"
     var onDecreaseTapped: (() -> Void)?
+    var onIncreaseTapped: (() -> Void)?
+    var onRemoveTapped: (() -> Void)?
     
-    private func setupAction(){
+    
+    private func setupActions(){
         decreaseButton.addTarget(self, action: #selector(decreaseButtonTapped), for: .touchUpInside)
-    
+        
+        increaseButton.addTarget(self, action: #selector(increaseButtonTapped), for: .touchUpInside)
+        removeButton.addTarget(self, action: #selector(removeButtonTapped), for: .touchUpInside)
+        
     }
     
-    @objc func decreaseButtonTapped(){
+    @objc private func decreaseButtonTapped(){
         
          onDecreaseTapped?()
     }
     
+    @objc private func increaseButtonTapped(){
+        onIncreaseTapped?()
+    }
+    
+    @objc private func removeButtonTapped(){
+        onRemoveTapped?()
+    }
     private let productImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -75,6 +88,17 @@ final class CartItemCell: UITableViewCell {
         return button
     }()
     
+   private let removeButton: UIButton = {
+       let button = UIButton(type: .system)
+       button.translatesAutoresizingMaskIntoConstraints = false
+       button.setImage(UIImage(systemName: "trash"), for: .normal)
+       button.tintColor = .systemRed
+       return button
+       
+    }()
+        
+        
+    
     
     func configure(with cartItem: CartItem) {
         titleLabel.text = cartItem.product.title
@@ -83,6 +107,8 @@ final class CartItemCell: UITableViewCell {
             cartItem.product.price
         )
         quantityLabel.text = "Quantity: \(cartItem.quantity)"
+        
+        
     }
     
     override init(
@@ -92,9 +118,25 @@ final class CartItemCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupHierarchy()
         setupLayout()
+        setupActions()
     }
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+
+        titleLabel.text = nil
+        priceLabel.text = nil
+        quantityLabel.text = nil
+
+        productImageView.image = nil
+        productImageView.backgroundColor = .secondarySystemBackground
+
+        onDecreaseTapped = nil
+        onIncreaseTapped = nil
+        onRemoveTapped = nil
     }
     
     private func setupHierarchy() {
@@ -104,6 +146,7 @@ final class CartItemCell: UITableViewCell {
         contentView.addSubview(quantityLabel)
         contentView.addSubview(decreaseButton)
         contentView.addSubview(increaseButton)
+        contentView.addSubview(removeButton)
     }
     
     private func setupLayout() {
@@ -132,8 +175,8 @@ final class CartItemCell: UITableViewCell {
                 constant: 12
             ),
             titleLabel.trailingAnchor.constraint(
-                equalTo: contentView.trailingAnchor,
-                constant: -16
+                equalTo: removeButton.trailingAnchor,
+                constant: -8
             ),
             
             priceLabel.topAnchor.constraint(
@@ -184,13 +227,18 @@ final class CartItemCell: UITableViewCell {
             increaseButton.trailingAnchor.constraint(
                 equalTo: contentView.trailingAnchor,
                 constant: -16
-            )
+            ),
+            
+            removeButton.topAnchor.constraint(
+                equalTo: contentView.topAnchor,
+                constant: 12
+            ),
+            removeButton.trailingAnchor.constraint(
+                equalTo: contentView.trailingAnchor,
+                constant: -16
+            ),
+            removeButton.widthAnchor.constraint(equalToConstant: 28),
+            removeButton.heightAnchor.constraint(equalToConstant: 28)
         ])
     }
-    
-    
-   
-    
-    
-    
 }

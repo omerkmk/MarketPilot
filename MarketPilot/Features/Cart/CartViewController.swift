@@ -8,39 +8,69 @@
 import UIKit
 
 final class CartViewController: UIViewController {
-
+    
     private let cartManager: CartManagerProtocol
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
-
+    
+    private let totalPriceLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .preferredFont(forTextStyle: .title2)
+        label.textColor = .label
+        label.textAlignment = .right
+        label.text = "Total: $0.00"
+        return label
+    }()
+    
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Your cart is empty."
+        label.font = .preferredFont(forTextStyle: .title3)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
+    }()
+    
+    
     init(cartManager: CartManagerProtocol) {
         self.cartManager = cartManager
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupView()
         setupHierarchy()
         setupLayout()
+        updateTotalPrice()
+        updateEmptyState()
     }
-
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshCartUI()
+    }
+    
     private func setupView() {
         view.backgroundColor = .systemBackground
         title = "Cart"
-
+        
         tableView.dataSource = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 112
-
+        
         tableView.register(
             CartItemCell.self,
             forCellReuseIdentifier: CartItemCell.reuseIdentifier
@@ -49,8 +79,10 @@ final class CartViewController: UIViewController {
     
     private func setupHierarchy() {
         view.addSubview(tableView)
+        view.addSubview(totalPriceLabel)
+        view.addSubview(emptyStateLabel)
     }
-
+    
     private func setupLayout() {
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(
@@ -63,11 +95,55 @@ final class CartViewController: UIViewController {
                 equalTo: view.trailingAnchor
             ),
             tableView.bottomAnchor.constraint(
-                equalTo: view.safeAreaLayoutGuide.bottomAnchor
+                equalTo: totalPriceLabel.topAnchor,
+                constant: -12
+            ),
+            totalPriceLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant: 16
+            ),
+            totalPriceLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor,
+                constant: -16
+            ),
+            totalPriceLabel.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -12
+            ),
+            emptyStateLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant: 24
+            ),
+            emptyStateLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor,
+                constant: -24
+            ),
+            emptyStateLabel.centerYAnchor.constraint(
+                equalTo: tableView.centerYAnchor
             )
         ])
     }
-   
+    
+    private func updateTotalPrice() {
+        totalPriceLabel.text = String(
+            format: "Total: $%.2f",
+            cartManager.totalPrice
+        )
+    }
+    
+    private func updateEmptyState() {
+        let isCartEmpty = cartManager.items.isEmpty
+        emptyStateLabel.isHidden = !isCartEmpty
+    }
+    
+    private func refreshCartUI() {
+        tableView.reloadData()
+        updateTotalPrice()
+        updateEmptyState()
+        
+        
+    }
+    
 }
 
 extension CartViewController: UITableViewDataSource {
@@ -91,6 +167,24 @@ extension CartViewController: UITableViewDataSource {
 
         cell.configure(with: cartItem)
 
+        cell.onDecreaseTapped = { [weak self] in
+            self?.cartManager.decreaseQuantity(for: cartItem.product)
+            self?.refreshCartUI()
+            
+        }
+        
+        cell.onIncreaseTapped = { [weak self] in
+            self?.cartManager.increaseQuantity(for: cartItem.product)
+            self?.refreshCartUI()
+        }
+        
+        cell.onRemoveTapped = {[weak self] in
+            self?.cartManager.remove(product: cartItem.product)
+            self?.refreshCartUI()
+            
+            
+        }
+        
         return cell
     }
     

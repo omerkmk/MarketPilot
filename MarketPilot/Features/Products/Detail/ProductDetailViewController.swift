@@ -76,7 +76,7 @@ final class ProductDetailViewController: UIViewController {
         button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         return button
     }()
-
+    
     private let addToCartButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -119,7 +119,7 @@ final class ProductDetailViewController: UIViewController {
             action: #selector(favoriteButtonTapped),
             for: .touchUpInside
         )
-
+        
         addToCartButton.addTarget(
             self,
             action: #selector(addToCartButtonTapped),
@@ -179,14 +179,14 @@ final class ProductDetailViewController: UIViewController {
             favoriteButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             favoriteButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             favoriteButton.heightAnchor.constraint(equalToConstant: 44),
-
+            
             addToCartButton.topAnchor.constraint(equalTo: favoriteButton.bottomAnchor, constant: 12),
             addToCartButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             addToCartButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             addToCartButton.heightAnchor.constraint(equalToConstant: 52),
             addToCartButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
-        
-        
+            
+            
         ])
     }
     
@@ -195,7 +195,7 @@ final class ProductDetailViewController: UIViewController {
         priceLabel.text = "$\(product.price)"
         categoryLabel.text = product.category
         descriptionLabel.text = product.description
-       
+        
     }
     
     
@@ -221,14 +221,8 @@ final class ProductDetailViewController: UIViewController {
     @objc private func favoriteButtonTapped() {
         print("Favorite tapped: \(product.title)")
     }
-
+    
     @objc private func addToCartButtonTapped() {
         cartManager.add(product: product)
-
-        cartManager.items.forEach { item in
-            print("\(item.product.title) - quantity: \(item.quantity)")
-            print("Total price: $\(cartManager.totalPrice)")
-        }
-        
     }
 }

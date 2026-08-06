@@ -13,6 +13,7 @@ protocol CartManagerProtocol {
     func add(product: Product)
     func decreaseQuantity(for product: Product)
     func remove(product: Product)
+    func increaseQuantity(for product: Product)
 }
 
 final class CartManager: CartManagerProtocol {
@@ -53,6 +54,16 @@ final class CartManager: CartManagerProtocol {
         } else {
             items.remove(at: existingIndex)
         }
+    }
+    
+    func increaseQuantity(for product: Product) {
+        guard let existingIndex = items.firstIndex(where: { cartItem in
+            cartItem.product.id == product.id
+        }) else {
+            return
+        }
+
+        items[existingIndex].quantity += 1
     }
     
     
