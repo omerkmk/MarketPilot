@@ -13,6 +13,7 @@ final class CartItemCell: UITableViewCell {
     var onDecreaseTapped: (() -> Void)?
     var onIncreaseTapped: (() -> Void)?
     var onRemoveTapped: (() -> Void)?
+    private var currentImageURLString: String?
     
     
     private func setupActions(){
@@ -100,13 +101,46 @@ final class CartItemCell: UITableViewCell {
         
     
     
-    func configure(with cartItem: CartItem) {
+    func configure(
+        with cartItem: CartItem,
+        imageLoadingService: ImageLoadingServiceProtocol
+    ) {
         titleLabel.text = cartItem.product.title
         priceLabel.text = String(
             format: "$%.2f",
             cartItem.product.price
         )
         quantityLabel.text = "Quantity: \(cartItem.quantity)"
+
+        productImageView.image = nil
+        productImageView.backgroundColor = .secondarySystemBackground
+
+        guard let imageURLString = cartItem.product.image else {
+            currentImageURLString = nil
+            return
+        }
+
+        currentImageURLString = imageURLString
+        Task { [weak self] in
+            do {
+                let image = try await imageLoadingService.loadImage(
+                    from: imageURLString
+                )
+
+                await MainActor.run {
+                    guard let self else { return }
+
+                    guard self.currentImageURLString == imageURLString else {
+                        return
+                    }
+
+                    self.productImageView.image = image
+                    self.productImageView.backgroundColor = .clear
+                }
+            } catch {
+                print("Cart image loading failed:", error)
+            }
+        }
         
         
     }
@@ -137,6 +171,7 @@ final class CartItemCell: UITableViewCell {
         onDecreaseTapped = nil
         onIncreaseTapped = nil
         onRemoveTapped = nil
+        currentImageURLString = nil
     }
     
     private func setupHierarchy() {
@@ -175,7 +210,7 @@ final class CartItemCell: UITableViewCell {
                 constant: 12
             ),
             titleLabel.trailingAnchor.constraint(
-                equalTo: removeButton.trailingAnchor,
+                equalTo: removeButton.leadingAnchor,
                 constant: -8
             ),
             

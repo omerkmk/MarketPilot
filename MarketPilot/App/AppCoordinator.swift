@@ -51,10 +51,15 @@ final class AppCoordinator {
     
     
     private func showCart() {
-       let cartViewController = CartViewController(cartManager: cartManager)
-        
-        navigationController.pushViewController(cartViewController, animated: true)
-        
+        let cartViewController = CartViewController(
+            cartManager: cartManager,
+            imageLoadingService: imageLoadingService
+        )
+
+        navigationController.pushViewController(
+            cartViewController,
+            animated: true
+        )
     }
     
 }

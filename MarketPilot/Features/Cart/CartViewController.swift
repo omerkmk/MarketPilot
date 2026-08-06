@@ -10,6 +10,7 @@ import UIKit
 final class CartViewController: UIViewController {
     
     private let cartManager: CartManagerProtocol
+    private let imageLoadingService: ImageLoadingServiceProtocol
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -39,8 +40,12 @@ final class CartViewController: UIViewController {
     }()
     
     
-    init(cartManager: CartManagerProtocol) {
+    init(
+        cartManager: CartManagerProtocol,
+        imageLoadingService: ImageLoadingServiceProtocol
+    ) {
         self.cartManager = cartManager
+        self.imageLoadingService = imageLoadingService
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -54,8 +59,6 @@ final class CartViewController: UIViewController {
         setupView()
         setupHierarchy()
         setupLayout()
-        updateTotalPrice()
-        updateEmptyState()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -165,7 +168,10 @@ extension CartViewController: UITableViewDataSource {
             return UITableViewCell()
         }
 
-        cell.configure(with: cartItem)
+        cell.configure(
+            with: cartItem,
+            imageLoadingService: imageLoadingService
+        )
 
         cell.onDecreaseTapped = { [weak self] in
             self?.cartManager.decreaseQuantity(for: cartItem.product)
