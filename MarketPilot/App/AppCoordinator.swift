@@ -14,13 +14,21 @@ final class AppCoordinator {
     private let imageLoadingService: ImageLoadingServiceProtocol
     private let cartManager: CartManagerProtocol
     private let favoriteManager: FavoriteManagerProtocol
-
+    
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
         self.productService = ProductService()
         self.imageLoadingService = ImageLoadingService()
         self.cartManager = CartManager()
-        self.favoriteManager = FavoriteManager()
+       
+        let favoriteStorage: FavoriteStorageProtocol =
+            UserDefaultsFavoriteStorage(
+                userDefaults: .standard
+            )
+
+        self.favoriteManager = FavoriteManager(
+            favoriteStorage: favoriteStorage
+        )
     }
 
     func start() {
