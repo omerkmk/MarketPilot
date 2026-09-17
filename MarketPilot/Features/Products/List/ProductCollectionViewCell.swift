@@ -15,7 +15,7 @@ final class ProductCollectionViewCell: UICollectionViewCell {
     private let priceLabel = UILabel()
     private let favoriteImageView = UIImageView()
     private var currentImageURLString: String?
-
+    private var imageLoadingTask: Task<Void, Never>?
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -24,10 +24,16 @@ final class ProductCollectionViewCell: UICollectionViewCell {
     }
 
     func configure(
-        with product: Product,
-        imageLoadingService: ImageLoadingServiceProtocol,
-        isFavorite: Bool
+
+
+    with product: Product,
+    imageLoadingService: ImageLoadingServiceProtocol,
+    isFavorite: Bool
     ) {
+
+        imageLoadingTask?.cancel()
+        imageLoadingTask = nil
+
         titleLabel.text = product.title
         priceLabel.text = "$\(product.price)"
 
@@ -44,7 +50,7 @@ final class ProductCollectionViewCell: UICollectionViewCell {
 
         currentImageURLString = imageURLString
 
-        Task { [weak self] in
+        imageLoadingTask = Task { [weak self] in
             do {
                 let image = try await imageLoadingService.loadImage(from: imageURLString)
 
@@ -55,7 +61,11 @@ final class ProductCollectionViewCell: UICollectionViewCell {
                     self.productImageView.image = image
                     self.productImageView.backgroundColor = .clear
                 }
-            } catch {
+            }
+            catch is CancellationError {
+
+            }
+            catch {
                 print("Image loading failed:", error)
             }
         }
@@ -134,9 +144,13 @@ final class ProductCollectionViewCell: UICollectionViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
+        imageLoadingTask?.cancel()
+        imageLoadingTask = nil
+
         productImageView.image = nil
         productImageView.backgroundColor = .systemGray5
         currentImageURLString = nil
         favoriteImageView.image = nil
+
     }
 }
