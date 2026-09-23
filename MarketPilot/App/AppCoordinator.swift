@@ -6,7 +6,7 @@
 //
 
 import UIKit
-
+@MainActor
 final class AppCoordinator {
 
     private let navigationController: UINavigationController
@@ -14,17 +14,26 @@ final class AppCoordinator {
     private let imageLoadingService: ImageLoadingServiceProtocol
     private let cartManager: CartManagerProtocol
     private let favoriteManager: FavoriteManagerProtocol
-    
+    private let productViewModel: ProductListViewModel
+    private let productRepository: ProductRepositoryProtocol
+
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
-        self.productService = ProductService()
+        let service = ProductService()
+        self.productService = service
         self.imageLoadingService = ImageLoadingService()
         self.cartManager = CartManager()
-       
+        let repository = ProductRepository(
+            productService: service
+        )
+
+        self.productRepository = repository
+        self.productViewModel = ProductListViewModel(productRepository: repository)
+
         let favoriteStorage: FavoriteStorageProtocol =
-            UserDefaultsFavoriteStorage(
-                userDefaults: .standard
-            )
+        UserDefaultsFavoriteStorage(
+            userDefaults: .standard
+        )
 
         self.favoriteManager = FavoriteManager(
             favoriteStorage: favoriteStorage
@@ -33,9 +42,10 @@ final class AppCoordinator {
 
     func start() {
         let productListViewController = ProductListViewController(
-            productService: productService,
+
             imageLoadingService: imageLoadingService,
-            favoriteManager: favoriteManager
+            favoriteManager: favoriteManager,
+            productViewModel: productViewModel
         )
 
         productListViewController.onProductSelected = { [weak self] product in

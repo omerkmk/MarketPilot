@@ -1,16 +1,13 @@
 import UIKit
 
+@MainActor
 final class ProductListViewController: UIViewController {
 
-    private let productService: ProductServiceProtocol
+    private let productViewModel: ProductListViewModel
     private let imageLoadingService: ImageLoadingServiceProtocol
     private let favoriteManager: FavoriteManagerProtocol
 
-    private var originalProducts: [Product] = []
-    private var displayedProducts: [Product] = []
-    private var selectedCategory: String?
-    private var availableCategories: [String] = []
-    private var selectedSort: SortOption?
+
 
     var onProductSelected: ((Product) -> Void)?
     var onCartTapped: (() -> Void)?
@@ -115,13 +112,13 @@ final class ProductListViewController: UIViewController {
     }()
 
     init(
-        productService: ProductServiceProtocol,
         imageLoadingService: ImageLoadingServiceProtocol,
-        favoriteManager: FavoriteManagerProtocol
+        favoriteManager: FavoriteManagerProtocol,
+        productViewModel: ProductListViewModel
     ) {
-        self.productService = productService
         self.imageLoadingService = imageLoadingService
         self.favoriteManager = favoriteManager
+        self.productViewModel = productViewModel
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -138,7 +135,13 @@ final class ProductListViewController: UIViewController {
         setupSearchController()
         setupHierarchy()
         setupLayout()
-        loadProducts()
+        bindViewModel()
+        Task {[weak self] in
+            guard let self else {return}
+            await self.productViewModel.loadProducts()
+
+        }
+
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -188,8 +191,8 @@ final class ProductListViewController: UIViewController {
             title: "Default Order",
             style: .default
         ) { [weak self] _ in
-            self?.selectedSort = nil
-            self?.applyFilters()
+            self?.productViewModel.selectSort(nil)
+
         }
 
         sortAlert.addAction(defaultOrderAction)
@@ -199,8 +202,7 @@ final class ProductListViewController: UIViewController {
                 title: sortOption.displayTitle,
                 style: .default
             ) { [weak self] _ in
-                self?.selectedSort = sortOption
-                self?.applyFilters()
+                self?.productViewModel.selectSort(sortOption)
             }
 
             sortAlert.addAction(sortAction)
@@ -236,19 +238,18 @@ final class ProductListViewController: UIViewController {
             title: "All Categories",
             style: .default
         ) { [weak self] _ in
-            self?.selectedCategory = nil
-            self?.applyFilters()
+            self?.productViewModel.selectCategory(nil)
         }
 
         alert.addAction(allCategoriesAction)
 
-        for category in availableCategories {
+        for category in productViewModel.availableCategories {
             let categoryAction = UIAlertAction(
                 title: category,
                 style: .default
             ) { [weak self] _ in
-                self?.selectedCategory = category
-                self?.applyFilters()
+                self?.productViewModel.selectCategory(category)
+
             }
 
             alert.addAction(categoryAction)
@@ -392,39 +393,38 @@ final class ProductListViewController: UIViewController {
         ])
     }
 
-    private func loadProducts() {
-        showLoading()
 
-        Task {
-            do {
-                let fetchedProducts = try await productService.fetchProducts()
+    private func bindViewModel(){
+        productViewModel.onStateChanged = {[weak self] state in
+            self?.render(state)
 
-                self.originalProducts = fetchedProducts
-
-                let categories = fetchedProducts.map { product in
-                    product.category
-                }
-
-                let uniqueCategories = Set(categories)
-                self.availableCategories = uniqueCategories.sorted()
-
-                self.displayedProducts = fetchedProducts
-                self.collectionView.reloadData()
-
-                if fetchedProducts.isEmpty {
-                    self.showEmpty()
-                } else {
-                    self.showProducts()
-                }
-            } catch let error {
-                self.showError()
-
-                print(error)
-            }
         }
     }
 
-    @MainActor
+    private func render(_ state: ProductListViewState) {
+        switch state {
+        case .idle:
+            break
+
+        case .loading:
+            showLoading()
+
+        case .loaded:
+            collectionView.reloadData()
+            showProducts()
+
+        case .empty:
+            collectionView.reloadData()
+            showEmpty()
+
+        case .error:
+            showError()
+        }
+    }
+
+
+
+
     private func showLoading() {
         collectionView.isHidden = true
         emptyStateLabel.isHidden = true
@@ -433,7 +433,6 @@ final class ProductListViewController: UIViewController {
         loadingIndicator.startAnimating()
     }
 
-    @MainActor
     private func showProducts() {
         loadingIndicator.stopAnimating()
 
@@ -442,7 +441,6 @@ final class ProductListViewController: UIViewController {
         collectionView.isHidden = false
     }
 
-    @MainActor
     private func showEmpty() {
         loadingIndicator.stopAnimating()
 
@@ -451,7 +449,7 @@ final class ProductListViewController: UIViewController {
         emptyStateLabel.isHidden = false
     }
 
-    @MainActor
+
     private func showError() {
         loadingIndicator.stopAnimating()
 
@@ -460,61 +458,7 @@ final class ProductListViewController: UIViewController {
         errorLabel.isHidden = false
     }
 
-    private func applyFilters() {
-        var filteredProducts = originalProducts
 
-        let normalizedSearchText = (searchController.searchBar.text ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-
-        if !normalizedSearchText.isEmpty {
-            filteredProducts = filteredProducts.filter { product in
-                product.title
-                    .lowercased()
-                    .contains(normalizedSearchText)
-            }
-        }
-
-        if let selectedCategory {
-            filteredProducts = filteredProducts.filter { product in
-                product.category == selectedCategory
-            }
-        }
-
-        if let selectedSort {
-            switch selectedSort {
-            case .priceAscending:
-                filteredProducts = filteredProducts.sorted {
-                    $0.price < $1.price
-                }
-
-            case .priceDescending:
-                filteredProducts = filteredProducts.sorted {
-                    $0.price > $1.price
-                }
-
-            case .titleAscending:
-                filteredProducts = filteredProducts.sorted {
-                    $0.title.lowercased() < $1.title.lowercased()
-                }
-
-            case .titleDescending:
-                filteredProducts = filteredProducts.sorted {
-                    $0.title.lowercased() > $1.title.lowercased()
-                }
-            }
-        }
-
-        displayedProducts = filteredProducts
-        collectionView.reloadData()
-
-        if displayedProducts.isEmpty {
-            emptyStateLabel.text = "No products match your current filters."
-            showEmpty()
-        } else {
-            showProducts()
-        }
-    }
 }
 
 // MARK: - UISearchResultsUpdating
@@ -524,7 +468,9 @@ extension ProductListViewController: UISearchResultsUpdating {
     func updateSearchResults(
         for searchController: UISearchController
     ) {
-        applyFilters()
+
+        let text =  searchController.searchBar.text ?? ""
+        productViewModel.updateSearchText(text)
     }
 }
 
@@ -536,14 +482,15 @@ extension ProductListViewController: UICollectionViewDataSource {
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
-        displayedProducts.count
+        productViewModel.displayedProducts.count
     }
 
     func collectionView(
         _ collectionView: UICollectionView,
         cellForItemAt indexPath: IndexPath
     ) -> UICollectionViewCell {
-        let product = displayedProducts[indexPath.item]
+        let product = productViewModel.displayedProducts[indexPath.item]
+
 
         guard let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: ProductCollectionViewCell.reuseIdentifier,
@@ -622,7 +569,7 @@ extension ProductListViewController: UICollectionViewDelegateFlowLayout {
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        let selectedProduct = displayedProducts[indexPath.item]
+        let selectedProduct = productViewModel.displayedProducts[indexPath.item]
 
         onProductSelected?(selectedProduct)
     }
