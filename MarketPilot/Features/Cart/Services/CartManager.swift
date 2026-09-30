@@ -14,11 +14,20 @@ protocol CartManagerProtocol {
     func decreaseQuantity(for product: Product)
     func remove(product: Product)
     func increaseQuantity(for product: Product)
+    func quantity(for product: Product) -> Int
 }
 
 final class CartManager: CartManagerProtocol {
     private(set) var items: [CartItem] = []
     
+    func quantity(for product: Product) -> Int {
+        let existingItem = items.first { cartItem in
+            cartItem.product.id == product.id
+        }
+
+        return existingItem?.quantity ?? 0
+    }
+
     func add(product: Product) {
         let existingIndex = items.firstIndex { cartItem in
             cartItem.product.id == product.id
