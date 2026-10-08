@@ -85,6 +85,11 @@ struct ProductDetailViewModelTests {
         cartManager.add(product: product)
         cartManager.add(product: otherProduct)
         let viewModel = makeViewModel(product: product, cartManager: cartManager)
+        var receivedStates: [ProductDetailCartState] = []
+        viewModel.onCartStateChanged = { state in
+            receivedStates.append(state)
+        }
+
 
         // Act
         viewModel.decreaseQuantity()
@@ -93,6 +98,7 @@ struct ProductDetailViewModelTests {
         #expect(viewModel.cartState == .notInCart)
         #expect(cartManager.quantity(for: product) == 0)
         #expect(cartManager.quantity(for: otherProduct) == 1)
+        #expect(receivedStates == [.notInCart])
     }
 
     @Test func toggleFavoriteWhenNotFavoriteSetsTrueAndNotifies() {
