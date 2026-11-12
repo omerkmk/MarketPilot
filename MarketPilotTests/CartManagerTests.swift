@@ -129,4 +129,14 @@ struct CartManagerTests {
         // Assert
         #expect(cartManager.totalPrice == 15.0)
     }
+
+    @Test func totalPriceIsZeroForEmptyCart() {
+        // Arrange
+        let cartManager = CartManager()
+
+        // Act: yok, sepet bilerek boş bırakılıyor
+
+        // Assert
+        #expect(cartManager.totalPrice == 0)
+    }
 }

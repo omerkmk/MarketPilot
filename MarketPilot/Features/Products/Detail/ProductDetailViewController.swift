@@ -9,10 +9,8 @@ import UIKit
 
 final class ProductDetailViewController: UIViewController {
 
-    private let product: Product
+    private let viewModel: ProductDetailViewModel
     private let imageLoadingService: ImageLoadingServiceProtocol
-    private let cartManager: CartManagerProtocol
-    private let favoriteManager: FavoriteManagerProtocol
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -90,15 +88,11 @@ final class ProductDetailViewController: UIViewController {
     }()
 
     init(
-        product: Product,
-        imageLoadingService: ImageLoadingServiceProtocol,
-        cartManager: CartManagerProtocol,
-        favoriteManager: FavoriteManagerProtocol
+        viewModel: ProductDetailViewModel,
+        imageLoadingService: ImageLoadingServiceProtocol
     ) {
-        self.product = product
+        self.viewModel = viewModel
         self.imageLoadingService = imageLoadingService
-        self.cartManager = cartManager
-        self.favoriteManager = favoriteManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -111,14 +105,19 @@ final class ProductDetailViewController: UIViewController {
         setupView()
         setupHierarchy()
         setupLayout()
+        bindViewModel()
         configure()
-        updateFavoriteButton()
         loadProductImage()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.refresh()
     }
 
     private func setupView() {
         view.backgroundColor = .systemBackground
-        title = product.title
+        title = viewModel.product.title
 
         favoriteButton.addTarget(
             self,
@@ -133,8 +132,14 @@ final class ProductDetailViewController: UIViewController {
         )
     }
 
-    private func updateFavoriteButton() {
-        if favoriteManager.isFavorite(product) {
+    private func bindViewModel() {
+        viewModel.onFavoriteChanged = { [weak self] isFavorite in
+            self?.updateFavoriteButton(isFavorite: isFavorite)
+        }
+    }
+
+    private func updateFavoriteButton(isFavorite: Bool) {
+        if isFavorite {
             favoriteButton.setTitle("♥ Favorited", for: .normal)
         } else {
             favoriteButton.setTitle("♡ Add to Favorites", for: .normal)
@@ -202,6 +207,7 @@ final class ProductDetailViewController: UIViewController {
     }
 
     private func configure() {
+        let product = viewModel.product
         titleLabel.text = product.title
         priceLabel.text = "$\(product.price)"
         categoryLabel.text = product.category
@@ -209,7 +215,7 @@ final class ProductDetailViewController: UIViewController {
     }
 
     private func loadProductImage() {
-        guard let imageURLString = product.image else {
+        guard let imageURLString = viewModel.product.image else {
             return
         }
 
@@ -228,11 +234,10 @@ final class ProductDetailViewController: UIViewController {
     }
 
     @objc private func favoriteButtonTapped() {
-        favoriteManager.toggle(product: product)
-        updateFavoriteButton()
+        viewModel.toggleFavorite()
     }
 
     @objc private func addToCartButtonTapped() {
-        cartManager.add(product: product)
+        viewModel.addToCart()
     }
 }

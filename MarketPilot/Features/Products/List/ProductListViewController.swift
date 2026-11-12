@@ -7,8 +7,6 @@ final class ProductListViewController: UIViewController {
     private let imageLoadingService: ImageLoadingServiceProtocol
     private let favoriteManager: FavoriteManagerProtocol
 
-
-
     var onProductSelected: ((Product) -> Void)?
     var onCartTapped: (() -> Void)?
     var onFavoritesTapped: (() -> Void)?

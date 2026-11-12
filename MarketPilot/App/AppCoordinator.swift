@@ -67,11 +67,15 @@ final class AppCoordinator {
     }
 
     private func showProductDetail(_ product: Product) {
-        let productDetailViewController = ProductDetailViewController(
+        let productDetailViewModel = ProductDetailViewModel(
             product: product,
-            imageLoadingService: imageLoadingService,
             cartManager: cartManager,
             favoriteManager: favoriteManager
+        )
+
+        let productDetailViewController = ProductDetailViewController(
+            viewModel: productDetailViewModel,
+            imageLoadingService: imageLoadingService
         )
 
         navigationController.pushViewController(
